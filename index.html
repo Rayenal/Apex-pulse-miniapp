@@ -163,7 +163,7 @@ document.addEventListener('change',e=>{if(e.target.id=='sw'){S.snd=+e.target.che
 document.addEventListener('gesturestart',e=>e.preventDefault());
 $('#sh').addEventListener('click',e=>{if(e.target.id=='sh')H.close()});
 $('#coin').addEventListener('pointerdown',e=>{if(S.en<1)return toast('No energy. Recharging…');const v=MN[S.m].tap*mult();S.en--;S.pend+=v;earn(v);beep(500+Math.random()*250);hap();fl(e.clientX,e.clientY,'+'+f(v,2));upd();save()});
-let n=0;function tick(){const t=Date.now(),dt=Math.min(Math.max((t-S.ts)/1e3,0),10800);S.ts=t;S.en=Math.min(MAX,S.en+dt*0.5);const g=MN[S.m].th*.002*mult()*dt;S.pend+=g;earn(g);save();upd();if(tab=='miners'&&++n%5==0)rChart();if(tab=='tasks'&&TK.map(st).join()!=sig)rTasks()}
+let n=0;function tick(){const t=Date.now(),dt=Math.min(Math.max((t-S.ts)/1e3,0),10800);S.ts=t;S.en=Math.min(MAX,S.en+dt*0.5);const g=MN[S.m].th*.0005*mult()*dt;S.pend+=g;earn(g);save();upd();if(tab=='miners'&&++n%5==0)rChart();if(tab=='tasks'&&TK.map(st).join()!=sig)rTasks()}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
 setInterval(tick,1000);tick();
 </script></body></html>
