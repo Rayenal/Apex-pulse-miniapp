@@ -3,6 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#070605"><title>ApexPulse</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--g:#f5c451;--g2:#c8921c;--g3:#ffe9a8;--bg:#070605;--c:#14110a;--c2:#201a0e;--t:#f6edd6;--m:#9a8e72;--ok:#5ee6a0}
@@ -94,6 +95,11 @@ nav svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;st
 <div id="to"></div>
 <div class="sh" id="sh"><div class="card"><h2>How it works</h2><p style="margin:8px 0 12px;color:var(--m)">Tap the coin to mine. Each tap uses 1 energy.<br>Your miner also earns on its own, even offline.<br>Press CLAIM to move mined tokens to your balance.<br>Finish tasks, upgrade miners and invite friends to earn more.</p><button class="btn wide" data-d="close">Got it</button></div></div>
 <script>
+// --- إعدادات SUPABASE ---
+const SUPABASE_URL = 'https://csbvsxfwpppesmmevisk.supabase.co/rest/v1/'; // حط رابط مشروعك هنا
+const SUPABASE_KEY = 'sb_publishable_HjQ8_KSY30-yjpHTeV0reA_gfQZ8...'; // حط المفتاح اللي نسخته من شوية
+const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
 const tg=window.Telegram?.WebApp,$=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 try{tg?.ready();tg?.expand();tg?.disableVerticalSwipes?.();tg?.setHeaderColor?.('#070605');tg?.setBackgroundColor?.('#070605')}catch(e){}
 const K='apexpulse_v1',BOT='ApexPulseBot',MAX=1000,PRICE=0.05,U=tg?.initDataUnsafe?.user;
@@ -101,9 +107,52 @@ const MN=[{n:'Starter Rig',th:1,p:0,tap:.01},{n:'Gold Forge',th:5,p:100,tap:.03}
 const LV=[['Bronze',0],['Silver',50],['Gold',250],['Platinum',1000],['Diamond',5000]];
 const TK=[{id:'ig',i:'📸',t:'Follow on Instagram',r:5,u:'https://instagram.com/'},{id:'igc',i:'💬',t:'Instagram Like / Comment',r:1,u:'https://www.instagram.com/apex.pulse27?xtok=MW8xMGQ4eDN2ZTU1OA%3D%3D'},{id:'yt',i:'▶️',t:'YouTube Engagement',r:1,u:'https://www.youtube.com/@rayen_al'},{id:'x',i:'🔁',t:'X / Twitter Retweet',r:1,u:'https://x.com/RayenAlya'},{id:'web',i:'🌐',t:'Visit our channel',r:2,u:'https://t.me/ApexPulse_channel'},{id:'bio',i:'📌',t:'Keep Channel in Bio',r:3,d:1}];
 let sv={};try{sv=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
-const S=Object.assign({bal:0,pend:0,life:0,en:MAX,ts:Date.now(),m:0,tk:{},snd:1,hist:{},w:'',ver:0,rf:{n:0,ok:0,cl:0},fam:0,id:U?.id||'AP'+(100000+Math.random()*899999|0)},sv);
+const S=Object.assign({bal:0,pend:0,life:0,en:MAX,ts:Date.now(),m:0,tk:{},snd:1,hist:{},w:'',ver:0,rf:{n:0,ok:0,cl:0},fam:0,id:U?.id?String(U.id):'AP'+(100000+Math.random()*899999|0)},sv);
 const name=(U&&[U.first_name,U.last_name].filter(Boolean).join(' '))||'Apex Member';
-const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+
+// دالة مزامنة البيانات وحفظها في قاعدة البيانات السحابية
+async function syncData(){
+  try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}
+  if(!db)return;
+  try{
+    await db.from('users').upsert({
+      id: S.id,
+      name: name,
+      balance: S.bal,
+      pend: S.pend,
+      referrals_count: S.rf.ok
+    });
+  }catch(e){}
+}
+
+// دالة تهيئة المستخدم وفحص الإحالات الحقيقية من تيليجرام
+async function initDb(){
+  if(!db) return;
+  try {
+    let { data: user } = await db.from('users').select('*').eq('id', S.id).single();
+    if (!user) {
+      const startParam = tg?.initDataUnsafe?.start_param;
+      let refBy = null;
+      if (startParam && startParam.startsWith('ref_')) {
+        refBy = startParam.replace('ref_', '');
+        if (refBy !== S.id) {
+          await db.from('users').select('*').eq('id', refBy).single().then(async ({ data: inviter }) => {
+            if (inviter) {
+              await db.from('users').update({ referrals_count: (inviter.referrals_count || 0) + 1 }).eq('id', refBy);
+            }
+          });
+        }
+      }
+      await db.from('users').insert([{ id: S.id, name: name, balance: S.bal, pend: S.pend, referred_by: refBy, referrals_count: 0 }]);
+    } else {
+      S.bal = user.balance || S.bal;
+      S.pend = user.pend || S.pend;
+      S.rf.ok = user.referrals_count || 0;
+    }
+    upd();
+  } catch(e) {}
+}
+
 const f=(n,d=2)=>(+n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 const sum=a=>a.reduce((x,y)=>x+y,0),hk=()=>Math.floor(Date.now()/36e5),mult=()=>1+S.m*.05;
 const hist=()=>{const k=hk();return Array.from({length:24},(_,i)=>S.hist[k-23+i]||0)};
@@ -129,10 +178,9 @@ function rFriends(){const r=S.rf,pn=r.ok*10-r.cl;
 $('#friends').innerHTML=`<h2>Referral Program</h2><div class="m">Invite friends and earn together</div>
 <div class="card cert"><div class="m">ApexPulse · Certificate of Membership</div><div class="cn">${name}</div><div class="m">ID ${S.id}</div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn fx" data-d="share">Share Certificate Card</button><button class="btn ghost" data-d="fam">+ Family Card</button></div>${Array.from({length:S.fam},(_,i)=>`<span class="chip">👤 Family Member #${i+1}</span>`).join('')}</div>
 <div class="card"><div class="m">Your Invite Link</div><div class="link" style="margin-top:8px"><span>${link()}</span><button class="btn" data-d="copy">Copy</button></div></div>
-<div class="grid2 c"><div class="card"><b class="big">${r.n}</b><span class="m">Total Referrals</span></div><div class="card"><b class="big">${r.ok}</b><span class="m">Successful Invites</span></div></div>
+<div class="grid2 c"><div class="card"><b class="big">${r.ok}</b><span class="m">Total Referrals</span></div><div class="card"><b class="big">${r.ok}</b><span class="m">Successful Invites</span></div></div>
 <div class="card row"><div><div class="m">Referral Reward</div><b class="big g">${f(pn)} APX</b></div><button class="btn" data-d="rclaim" ${pn>0?'':'disabled'}>Claim</button></div>
-<div class="card"><div class="m">Team Wallet Earnings</div><div class="kv"><span>Direct bonus (10 APX / invite)</span><b>${f(r.ok*10)}</b></div><div class="kv"><span>Team mining share (5%)</span><b>${f(r.ok*2.5)}</b></div><div class="kv"><span>Already claimed</span><b>${f(r.cl)}</b></div><div class="kv"><span>Total earned</span><b class="g">${f(r.ok*12.5)} APX</b></div></div>
-<button class="lnk" data-d="demo">+ simulate invite (demo only, remove before launch)</button>`}
+<div class="card"><div class="m">Team Wallet Earnings</div><div class="kv"><span>Direct bonus (10 APX / invite)</span><b>${f(r.ok*10)}</b></div><div class="kv"><span>Team mining share (5%)</span><b>${f(r.ok*2.5)}</b></div><div class="kv"><span>Already claimed</span><b>${f(r.cl)}</b></div><div class="kv"><span>Total earned</span><b class="g">${f(r.ok*12.5)} APX</b></div></div>`}
 function rProfile(){const tot=S.bal+S.pend,wd=S.ver?Math.floor(S.bal*.5):0;
 $('#profile').innerHTML=`<h2>Profile</h2>
 <div class="card prof"><div class="av">${name[0].toUpperCase()}</div><div class="fx"><b>${name}</b><div class="m">ID: ${S.id}</div></div><span class="lv ${S.ver?'ok':'no'}">${S.ver?'✔ VERIFIED':'UNVERIFIED'}</span></div>
@@ -143,27 +191,27 @@ ${S.ver?'':'<button class="btn wide" data-d="verify">Verify Account</button>'}
 <div class="grid2"><div class="card"><div class="m">Holding Wallet</div><b class="big">${f(S.bal)}</b><span class="m">APX</span></div><div class="card"><div class="m">Pool Wallet</div><b class="big g">${f(wd,0)}</b><span class="m">withdrawable</span><button class="btn sm wide" data-d="wd" ${wd>=100&&S.w?'':'disabled'}>Withdraw</button></div></div>
 <div class="m" style="text-align:center;margin-top:10px;text-transform:none;font-weight:400">Withdrawals need a verified account, a connected wallet and at least 100 APX.</div>`}
 const H={
-wallet(){/* demo only: replace with TON Connect */if(S.w){S.w='';toast('Wallet disconnected')}else{S.w='UQ'+Array.from({length:46},()=>'0123456789abcdef'[Math.random()*16|0]).join('');toast('Wallet connected ✓')}save();upd();if(tab=='profile')rProfile()},
-snd(){S.snd=S.snd?0:1;save();upd();toast(S.snd?'Sound on':'Sound off')},
+wallet(){if(S.w){S.w='';toast('Wallet disconnected')}else{S.w='UQ'+Array.from({length:46},()=>'0123456789abcdef'[Math.random()*16|0]).join('');toast('Wallet connected ✓')}syncData();upd();if(tab=='profile')rProfile()},
+snd(){S.snd=S.snd?0:1;syncData();upd();toast(S.snd?'Sound on':'Sound off')},
 guide(){$('#sh').classList.add('on')},close(){$('#sh').classList.remove('on')},
-claim(){if(S.pend<.01)return toast('Nothing to claim yet');const a=S.pend;S.bal+=a;S.pend=0;save();upd();hap('medium');beep(880,.15);toast('Claimed '+f(a)+' APX ✓')},
-task(id){const t=TK.find(x=>x.id==id),s=st(t);if(s=='go'){S.tk[id]=Date.now();t.u&&ext(t.u)}else if(s=='claim'){S.tk[id]=t.d?Date.now():'d';S.bal+=t.r;earn(t.r);toast('+'+t.r+' APX');hap('medium');beep(880,.15)}save();rTasks();upd()},
-up(i){i=+i;const m=MN[i];if(i!=S.m+1||S.bal<m.p)return;S.bal-=m.p;S.m=i;save();rMiners();upd();hap('heavy');toast('⛏️ '+m.n+' activated')},
+claim(){if(S.pend<.01)return toast('Nothing to claim yet');const a=S.pend;S.bal+=a;S.pend=0;syncData();upd();hap('medium');beep(880,.15);toast('Claimed '+f(a)+' APX ✓')},
+task(id){const t=TK.find(x=>x.id==id),s=st(t);if(s=='go'){S.tk[id]=Date.now();t.u&&ext(t.u)}else if(s=='claim'){S.tk[id]=t.d?Date.now():'d';S.bal+=t.r;earn(t.r);toast('+'+t.r+' APX');hap('medium');beep(880,.15)}syncData();rTasks();upd()},
+up(i){i=+i;const m=MN[i];if(i!=S.m+1||S.bal<m.p)return;S.bal-=m.p;S.m=i;syncData();rMiners();upd();hap('heavy');toast('⛏️ '+m.n+' activated')},
 copy(){const l=link(),ok=()=>toast('Link copied ✓');(navigator.clipboard?navigator.clipboard.writeText(l):Promise.reject()).then(ok,()=>{const t=document.createElement('textarea');t.value=l;document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(e){}t.remove();ok()})},
 share(){const l=link(),x='Join me on ApexPulse and start mining! ⛏️',u='https://t.me/share/url?url='+encodeURIComponent(l)+'&text='+encodeURIComponent(x);tg?.openTelegramLink?tg.openTelegramLink(u):navigator.share?navigator.share({title:'ApexPulse',text:x,url:l}).catch(()=>{}):H.copy()},
-fam(){if(S.fam>=3)return toast('Maximum 3 family cards');S.fam++;save();rFriends();toast('Family card #'+S.fam+' created')},
-rclaim(){const p=S.rf.ok*10-S.rf.cl;if(p<=0)return;S.rf.cl+=p;S.bal+=p;earn(p);save();rFriends();upd();hap('medium');toast('+'+f(p)+' APX referral reward')},
-demo(){S.rf.n++;if(Math.random()<.7)S.rf.ok++;save();rFriends()},
-verify(){if(!S.w)return toast('Connect your wallet first');if(!TK.some(t=>st(t)=='done'))return toast('Complete at least one task');S.ver=1;save();rProfile();toast('Account verified ✔')},
-wd(){const a=Math.floor(S.bal*.5);if(!S.ver||!S.w||a<100)return;S.bal-=a;save();rProfile();upd();toast(f(a,0)+' APX withdrawal queued')}};
+fam(){if(S.fam>=3)return toast('Maximum 3 family cards');S.fam++;syncData();rFriends();toast('Family card #'+S.fam+' created')},
+rclaim(){const p=S.rf.ok*10-S.rf.cl;if(p<=0)return;S.rf.cl+=p;S.bal+=p;earn(p);syncData();rFriends();upd();hap('medium');toast('+'+f(p)+' APX referral reward')},
+verify(){if(!S.w)return toast('Connect your wallet first');if(!TK.some(t=>st(t)=='done'))return toast('Complete at least one task');S.ver=1;syncData();rProfile();toast('Account verified ✔')},
+wd(){const a=Math.floor(S.bal*.5);if(!S.ver||!S.w||a<100)return;S.bal-=a;syncData();rProfile();upd();toast(f(a,0)+' APX withdrawal queued')}};
 let tab='mine';
 function show(t){tab=t;$$('.tab').forEach(s=>s.classList.toggle('on',s.id==t));$$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==t));$('main').scrollTop=0;({tasks:rTasks,miners:rMiners,friends:rFriends,profile:rProfile})[t]?.();try{tg?.HapticFeedback?.selectionChanged()}catch(e){}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(b&&!b.disabled){const[a,x]=b.dataset.d.split(':');H[a]?.(x)}const n=e.target.closest('nav button');if(n)show(n.dataset.t)});
-document.addEventListener('change',e=>{if(e.target.id=='sw'){S.snd=+e.target.checked;save();upd()}});
+document.addEventListener('change',e=>{if(e.target.id=='sw'){S.snd=+e.target.checked;syncData();upd()}});
 document.addEventListener('gesturestart',e=>e.preventDefault());
 $('#sh').addEventListener('click',e=>{if(e.target.id=='sh')H.close()});
-$('#coin').addEventListener('pointerdown',e=>{if(S.en<1)return toast('No energy. Recharging…');const v=MN[S.m].tap*mult();S.en--;S.pend+=v;earn(v);beep(500+Math.random()*250);hap();fl(e.clientX,e.clientY,'+'+f(v,2));upd();save()});
-let n=0;function tick(){const t=Date.now(),dt=Math.min(Math.max((t-S.ts)/1e3,0),10800);S.ts=t;S.en=Math.min(MAX,S.en+dt*0.5);const g=MN[S.m].th*.0005*mult()*dt;S.pend+=g;earn(g);save();upd();if(tab=='miners'&&++n%5==0)rChart();if(tab=='tasks'&&TK.map(st).join()!=sig)rTasks()}
+$('#coin').addEventListener('pointerdown',e=>{if(S.en<1)return toast('No energy. Recharging…');const v=MN[S.m].tap*mult();S.en--;S.pend+=v;earn(v);beep(500+Math.random()*250);hap();fl(e.clientX,e.clientY,'+'+f(v,2));upd();syncData()});
+let n=0;function tick(){const t=Date.now(),dt=Math.min(Math.max((t-S.ts)/1e3,0),10800);S.ts=t;S.en=Math.min(MAX,S.en+dt*0.5);const g=MN[S.m].th*.0005*mult()*dt;S.pend+=g;earn(g);syncData();upd();if(tab=='miners'&&++n%5==0)rChart();if(tab=='tasks'&&TK.map(st).join()!=sig)rTasks()}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
 setInterval(tick,1000);tick();
+initDb();
 </script></body></html>
