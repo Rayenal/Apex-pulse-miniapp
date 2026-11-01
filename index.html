@@ -4,6 +4,7 @@
 <meta name="theme-color" content="#070605"><title>ApexPulse</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--g:#f5c451;--g2:#c8921c;--g3:#ffe9a8;--bg:#070605;--c:#14110a;--c2:#201a0e;--t:#f6edd6;--m:#9a8e72;--ok:#5ee6a0}
@@ -228,16 +229,29 @@ task(id){
     if (S.ads.d !== today) { S.ads = { c: 0, d: today }; }
     if (S.ads.c >= 10) return toast('كملت 10 إعلانات لليوم! ارجع غدوة');
     
-    S.ads.c++;
-    S.bal += 3;
-    earn(3);
-    syncData();
-    rTasks();
-    upd();
-    hap('medium');
-    beep(880,.15);
-    toast('+3 APX (إعلان ' + S.ads.c + '/10)');
-    t.u && ext(t.u);
+    if (window.Adsgram) {
+      window.Adsgram.init({ blockId: "task-57389" }).show().then(() => {
+        S.ads.c++;
+        S.bal += 3;
+        earn(3);
+        syncData();
+        rTasks();
+        upd();
+        hap('medium');
+        beep(880, .15);
+        toast('+3 APX (إعلان ' + S.ads.c + '/10) ✔️');
+      }).catch((result) => {
+        toast('تم إلغاء الإعلان أو حدث خطأ');
+      });
+    } else {
+      S.ads.c++;
+      S.bal += 3;
+      earn(3);
+      syncData();
+      rTasks();
+      upd();
+      toast('+3 APX (Test Ad ' + S.ads.c + '/10)');
+    }
     return;
   }
   const s=st(t);
