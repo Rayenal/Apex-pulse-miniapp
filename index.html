@@ -97,7 +97,7 @@ nav svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;st
 const tg=window.Telegram?.WebApp,$=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 try{tg?.ready();tg?.expand();tg?.disableVerticalSwipes?.();tg?.setHeaderColor?.('#070605');tg?.setBackgroundColor?.('#070605')}catch(e){}
 const K='apexpulse_v1',BOT='ApexPulseBot',MAX=1000,PRICE=.012,U=tg?.initDataUnsafe?.user;
-const MN=[{n:'Starter Rig',th:1,p:0,tap:.1},{n:'Gold Forge',th:5,p:100,tap:.3},{n:'Platinum Array',th:20,p:500,tap:.8},{n:'Apex Quantum',th:100,p:2500,tap:2}];
+const MN=[{n:'Starter Rig',th:1,p:0,tap:.01},{n:'Gold Forge',th:5,p:100,tap:.03},{n:'Platinum Array',th:20,p:500,tap:.08},{n:'Apex Quantum',th:100,p:2500,tap:0.2}];
 const LV=[['Bronze',0],['Silver',50],['Gold',250],['Platinum',1000],['Diamond',5000]];
 const TK=[{id:'ig',i:'📸',t:'Follow on Instagram',r:5,u:'https://instagram.com/'},{id:'igc',i:'💬',t:'Instagram Like / Comment',r:1,u:'https://instagram.com/'},{id:'yt',i:'▶️',t:'YouTube Engagement',r:1,u:'https://youtube.com/'},{id:'x',i:'🔁',t:'X / Twitter Retweet',r:1,u:'https://x.com/'},{id:'web',i:'🌐',t:'Visit Website',r:2,u:'https://example.com/'},{id:'bio',i:'📌',t:'Keep Channel in Bio',r:3,d:1}];
 let sv={};try{sv=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
