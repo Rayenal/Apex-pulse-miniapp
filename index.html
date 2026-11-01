@@ -99,7 +99,7 @@ try{tg?.ready();tg?.expand();tg?.disableVerticalSwipes?.();tg?.setHeaderColor?.(
 const K='apexpulse_v1',BOT='ApexPulseBot',MAX=1000,PRICE=0.05,U=tg?.initDataUnsafe?.user;
 const MN=[{n:'Starter Rig',th:1,p:0,tap:.01},{n:'Gold Forge',th:5,p:100,tap:.03},{n:'Platinum Array',th:20,p:500,tap:.08},{n:'Apex Quantum',th:100,p:2500,tap:0.2}];
 const LV=[['Bronze',0],['Silver',50],['Gold',250],['Platinum',1000],['Diamond',5000]];
-const TK=[{id:'ig',i:'📸',t:'Follow on Instagram',r:5,u:'https://instagram.com/'},{id:'igc',i:'💬',t:'Instagram Like / Comment',r:1,u:'https://www.instagram.com/apex.pulse27?xtok=MW8xMGQ4eDN2ZTU1OA%3D%3D'},{id:'yt',i:'▶️',t:'YouTube Engagement',r:1,u:'https://www.youtube.com/@rayen_al'},{id:'x',i:'🔁',t:'X / Twitter Retweet',r:1,u:'https://x.com/RayenAlya'},{id:'web',i:'🌐',t:'Visit Website',r:2,u:'https://x.com/RayenAlya'},{id:'bio',i:'📌',t:'Keep Channel in Bio',r:3,d:1}];
+const TK=[{id:'ig',i:'📸',t:'Follow on Instagram',r:5,u:'https://instagram.com/'},{id:'igc',i:'💬',t:'Instagram Like / Comment',r:1,u:'https://www.instagram.com/apex.pulse27?xtok=MW8xMGQ4eDN2ZTU1OA%3D%3D'},{id:'yt',i:'▶️',t:'YouTube Engagement',r:1,u:'https://www.youtube.com/@rayen_al'},{id:'x',i:'🔁',t:'X / Twitter Retweet',r:1,u:'https://x.com/RayenAlya'},{id:'web',i:'🌐',t:'Visit our channel',r:2,u:'https://t.me/ApexPulse_channel'},{id:'bio',i:'📌',t:'Keep Channel in Bio',r:3,d:1}];
 let sv={};try{sv=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
 const S=Object.assign({bal:0,pend:0,life:0,en:MAX,ts:Date.now(),m:0,tk:{},snd:1,hist:{},w:'',ver:0,rf:{n:0,ok:0,cl:0},fam:0,id:U?.id||'AP'+(100000+Math.random()*899999|0)},sv);
 const name=(U&&[U.first_name,U.last_name].filter(Boolean).join(' '))||'Apex Member';
