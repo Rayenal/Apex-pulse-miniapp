@@ -229,8 +229,9 @@ task(id){
     if (S.ads.d !== today) { S.ads = { c: 0, d: today }; }
     if (S.ads.c >= 10) return toast('كملت 10 إعلانات لليوم! ارجع غدوة');
     
+    // تم تعديل الـ blockId لإضافة بادئة int- التي تطلبها مكتبة Adsgram
     if (window.Adsgram) {
-      window.Adsgram.init({ blockId: "task-57389" }).show().then(() => {
+      window.Adsgram.init({ blockId: "int-57389" }).show().then(() => {
         S.ads.c++;
         S.bal += 3;
         earn(3);
